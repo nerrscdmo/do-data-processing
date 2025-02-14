@@ -77,3 +77,28 @@ ggplot(yrDist,
     labs(title = "How many stations 'worse' than usual?",
          x = "Year",
          y = "% of stations")
+
+
+# trends ----
+stn_trends |> 
+    pivot_longer(-c(station, nYears),
+                 names_to = c("param", ".value"),
+                 names_sep = "\\.") |> 
+    mutate(significant = case_when(pval <= 0.05 ~ "yes",
+                                   is.na(pval) ~ "no",  # these are proportions when all values were 0
+                                   pval > 0.05 ~ "no")) |> 
+    filter(!is.na(trend)) |> 
+    ggplot() +
+    geom_histogram(aes(x = trend,
+                       fill = significant),
+                   col = "gray",
+                   bins = 30,
+                   alpha = 0.8) +
+    geom_vline(xintercept = 0,
+               linewidth = 1) +
+    scale_y_log10() +
+    scale_fill_brewer(palette = "Set1") +
+    facet_wrap(~param, scales = "free", ncol = 1) +
+    theme_bw() +
+    labs(title = "linear trend per year",
+         subtitle = "2007-2023; does not account for autocorrelation or seasonality \nand may not be appropriate for percents")

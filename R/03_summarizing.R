@@ -96,6 +96,8 @@ stn_yrLimits <- stn_yr |>
         LT5pct_boxOutlier = quantile(annual_LT5_percent, probs = 0.75, na.rm = TRUE) + 1.5*IQR(annual_LT5_percent, na.rm = TRUE)
     )
 
+stn_thresholds <- stn_yrLimits  # makes more sense as a name
+
 # what's going to be flagged for each station, either way we look?
 stn_yr2 <- left_join(stn_yr, stn_yrLimits, by = "station") |> 
     mutate(
@@ -146,3 +148,63 @@ tomap <- stn_yr2 |>
     pivot_wider(names_from = metric,
                 values_from = value) |> 
     left_join(stn_coords, by = "station")
+
+# trends ----
+library(mgcv)
+
+trends <- list()
+stns <- unique(stn_mmyr$station)
+for(i in seq_along(stns)){
+    df <- filter(stn_mmyr, station == stns[i]) |> 
+        mutate(date = lubridate::decimal_date(lubridate::ymd(paste(year, month, "1"))))
+    
+    # if there's at least 5 years of data, calculate trends
+    if(max(df$date) - min(df$date) >= 5){
+        trnd_mgl <- lm(domgl_median ~ date,
+                        data = df)
+        mgl_summ <- summary(trnd_mgl)
+        
+        
+        trnd_LT2 <- lm(domgl_LT2_percent ~ date,
+                        data = df)
+        LT2_summ <- summary(trnd_LT2)
+        
+        
+        trnd_LT5 <- lm(domgl_LT5_percent ~ date,
+                        data = df)
+        LT5_summ <- summary(trnd_LT5)
+        
+        trnds <- data.frame(
+            station = stns[i],
+            domgl_median.trend = mgl_summ$coefficients["date", "Estimate"],
+            domgl_median.pval = mgl_summ$coefficients["date", "Pr(>|t|)"],
+            LT2.trend = LT2_summ$coefficients["date", "Estimate"],
+            LT2.pval = LT2_summ$coefficients["date", "Pr(>|t|)"],
+            LT5.trend = LT5_summ$coefficients["date", "Estimate"],
+            LT5.pval = LT5_summ$coefficients["date", "Pr(>|t|)"],
+            nYears = as.character(round(max(df$date) - min(df$date), 1)),
+            row.names = NULL
+        )
+        
+    } else {
+        trnds <- data.frame(station = stns[i],
+                            nYears = "<5")
+    }
+    
+    trends[[i]] <- trnds
+    
+
+}
+
+stn_trends <- bind_rows(trends)
+
+save(stn_mmyr,
+     stnDist,
+     stn_moDist,
+     stn_thresholds,
+     yrDist,
+     stn_trends,
+     tomap,
+     file = here::here("data",
+                       "do_dataframes.RData")
+     )

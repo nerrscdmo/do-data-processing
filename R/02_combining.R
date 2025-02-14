@@ -14,6 +14,7 @@ saveRDS(comb, file = here::here("data", "combined",
 comb_sub <- comb |> 
     select(station, year, month,
            domgl_mean,
+           domgl_median,
            domgl_nValid,
            domgl_LT2_n,
            domgl_LT5_n,
