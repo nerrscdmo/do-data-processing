@@ -14,9 +14,11 @@ stn_coords <- stn_mdat |>
 # CHANGE THIS - I'm manually removing 2024 because it's very anomalous and I think
 # we need to wait for authentication to catch flagged points.
 stn_mmyr <- readRDS(here::here("data", "combined", 
-                               "monthlyDO_minimal.RDS")) |> 
+                               "monthlyDO_all.RDS")) |> 
     filter(year < 2024) |> 
-    left_join(stn_coords, by = "station")
+    left_join(stn_coords, by = "station") |> 
+    rename(domgl_p25 = domgl_q1,
+           domgl_p75 = domgl_q3)
 
 
 # needed data frames:
@@ -33,6 +35,7 @@ stn_mmyr <- readRDS(here::here("data", "combined",
 stn_yr <- stn_mmyr |> 
     summarize(.by = c(station, year),
               annual_mean.mgl = mean(domgl_mean, na.rm = TRUE),
+              annual_median.mgl = median(domgl_median, na.rm = TRUE),
               annual_nValid = sum(domgl_nValid, na.rm = TRUE),
               annual_LT2_n = sum(domgl_LT2_n, na.rm = TRUE),
               annual_LT5_n = sum(domgl_LT5_n, na.rm = TRUE)) |> 
@@ -49,6 +52,11 @@ stnDist <- stn_yr |>
               mean.mgl_max = max(annual_mean.mgl, na.rm = TRUE),
               mean.mgl_p25 = quantile(annual_mean.mgl, probs = 0.25, na.rm = TRUE),
               mean.mgl_p75 = quantile(annual_mean.mgl, probs = 0.75, na.rm = TRUE),
+              median.mgl_median = median(annual_median.mgl, na.rm = TRUE),
+              median.mgl_min = min(annual_median.mgl, na.rm = TRUE),
+              median.mgl_max = max(annual_median.mgl, na.rm = TRUE),
+              median.mgl_p25 = quantile(annual_median.mgl, probs = 0.25, na.rm = TRUE),
+              median.mgl_p75 = quantile(annual_median.mgl, probs = 0.75, na.rm = TRUE),
               LT2pct_mean = mean(annual_LT2_percent, na.rm = TRUE),
               LT2pct_median = median(annual_LT2_percent, na.rm = TRUE),
               LT2pct_min = min(annual_LT2_percent, na.rm = TRUE),
@@ -73,6 +81,11 @@ stn_moDist <- stn_mmyr |>
               mean.mgl_max = max(domgl_mean, na.rm = TRUE),
               mean.mgl_p25 = quantile(domgl_mean, probs = 0.25, na.rm = TRUE),
               mean.mgl_p75 = quantile(domgl_mean, probs = 0.75, na.rm = TRUE),
+              median.mgl_median = median(domgl_median, na.rm = TRUE),
+              median.mgl_min = min(domgl_median, na.rm = TRUE),
+              median.mgl_max = max(domgl_median, na.rm = TRUE),
+              median.mgl_p25 = quantile(domgl_median, probs = 0.25, na.rm = TRUE),
+              median.mgl_p75 = quantile(domgl_median, probs = 0.75, na.rm = TRUE),
               LT2pct_mean = mean(domgl_LT2_percent, na.rm = TRUE),
               LT2pct_min = min(domgl_LT2_percent, na.rm = TRUE),
               LT2pct_max = max(domgl_LT2_percent, na.rm = TRUE),

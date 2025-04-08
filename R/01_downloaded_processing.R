@@ -6,7 +6,7 @@ library(SWMPr)
 library(lubridate)
 
 # set file paths
-path <- here::here("data", "108552.zip")
+path <- here::here("data", "309587.zip")
 
 
 # get all the stations with data files (files ending in yyyy.csv)
@@ -41,6 +41,8 @@ foreach(stat = stats, .packages = c('dplyr', 'stringr', 'SWMPr', 'lubridate')) %
                          domgl_median = median(do_mgl, na.rm = TRUE),
                          domgl_sd = sd(do_mgl, na.rm = TRUE),
                          domgl_iqr = IQR(do_mgl, na.rm = TRUE),
+                         domgl_q1 = quantile(do_mgl, probs = 0.25, na.rm = TRUE),
+                         domgl_q3 = quantile(do_mgl, probs = 0.75, na.rm = TRUE),
                          domgl_LT2_n = sum(do_mgl < 2, na.rm = TRUE),
                          domgl_LT5_n = sum(do_mgl < 5, na.rm = TRUE),
                          domgl_nValid = sum(!is.na(do_mgl))) |> 
