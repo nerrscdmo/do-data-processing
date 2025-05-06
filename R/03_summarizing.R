@@ -25,10 +25,10 @@ stn_mmyr <- readRDS(here::here("data", "combined",
 # stn x mmyr (1 row per stn x 2010-Jan; stn x 2010-Feb; etc.) - this is 'stn_mmyr'
 # stn x yr (1 row per stn x 2010; stn x 2011; etc.)
 # stn yearly dist'n (1 row per stn)
-# stn monthly dist'n across all years  (1 row per stn x Jan; stn x Feb; etc.)
-# overall yearly dist'n (1 row per year, across all stns)
-# stn yearly norms
-# stn monthly norms
+# XX not needed for this round - stn monthly dist'n across all years  (1 row per stn x Jan; stn x Feb; etc.)
+# XX not needed for this round - overall yearly dist'n (1 row per year, across all stns)
+# stn yearly norms - used for determining thresholds
+# XX not needed for this round - stn monthly norms
 
 
 # stn_yr ----
@@ -48,63 +48,45 @@ stn_yr <- stn_mmyr |>
 stnDist <- stn_yr |> 
     summarize(.by = station,
               mean.mgl_mean = mean(annual_mean.mgl, na.rm = TRUE),
-              mean.mgl_min = min(annual_mean.mgl, na.rm = TRUE),
-              mean.mgl_max = max(annual_mean.mgl, na.rm = TRUE),
-              mean.mgl_p25 = quantile(annual_mean.mgl, probs = 0.25, na.rm = TRUE),
-              mean.mgl_p75 = quantile(annual_mean.mgl, probs = 0.75, na.rm = TRUE),
               median.mgl_median = median(annual_median.mgl, na.rm = TRUE),
-              median.mgl_min = min(annual_median.mgl, na.rm = TRUE),
-              median.mgl_max = max(annual_median.mgl, na.rm = TRUE),
-              median.mgl_p25 = quantile(annual_median.mgl, probs = 0.25, na.rm = TRUE),
               median.mgl_p75 = quantile(annual_median.mgl, probs = 0.75, na.rm = TRUE),
               LT2pct_mean = mean(annual_LT2_percent, na.rm = TRUE),
               LT2pct_median = median(annual_LT2_percent, na.rm = TRUE),
-              LT2pct_min = min(annual_LT2_percent, na.rm = TRUE),
-              LT2pct_max = max(annual_LT2_percent, na.rm = TRUE),
-              LT2pct_p25 = quantile(annual_LT2_percent, probs = 0.25, na.rm = TRUE),
-              LT2pct_p75 = quantile(annual_LT2_percent, probs = 0.75, na.rm = TRUE),
               LT5pct_mean = mean(annual_LT5_percent, na.rm = TRUE),
               LT5pct_median = median(annual_LT5_percent, na.rm = TRUE),
-              LT5pct_min = min(annual_LT5_percent, na.rm = TRUE),
-              LT5pct_max = max(annual_LT5_percent, na.rm = TRUE),
-              LT5pct_p25 = quantile(annual_LT5_percent, probs = 0.25, na.rm = TRUE),
-              LT5pct_p75 = quantile(annual_LT5_percent, probs = 0.75, na.rm = TRUE))
+              )
 
 
 # stn_moDist ----
 # stats for each month, across all years
 # can use for station-wise pop-ups. "_mean" for geom_line; others for ribbons.
-stn_moDist <- stn_mmyr |> 
-    summarize(.by = c(station, month),
-              mean.mgl_mean = mean(domgl_mean, na.rm = TRUE),
-              mean.mgl_min = min(domgl_mean, na.rm = TRUE),
-              mean.mgl_max = max(domgl_mean, na.rm = TRUE),
-              mean.mgl_p25 = quantile(domgl_mean, probs = 0.25, na.rm = TRUE),
-              mean.mgl_p75 = quantile(domgl_mean, probs = 0.75, na.rm = TRUE),
-              median.mgl_median = median(domgl_median, na.rm = TRUE),
-              median.mgl_min = min(domgl_median, na.rm = TRUE),
-              median.mgl_max = max(domgl_median, na.rm = TRUE),
-              median.mgl_p25 = quantile(domgl_median, probs = 0.25, na.rm = TRUE),
-              median.mgl_p75 = quantile(domgl_median, probs = 0.75, na.rm = TRUE),
-              LT2pct_mean = mean(domgl_LT2_percent, na.rm = TRUE),
-              LT2pct_min = min(domgl_LT2_percent, na.rm = TRUE),
-              LT2pct_max = max(domgl_LT2_percent, na.rm = TRUE),
-              LT2pct_p25 = quantile(domgl_LT2_percent, probs = 0.25, na.rm = TRUE),
-              LT2pct_p75 = quantile(domgl_LT2_percent, probs = 0.75, na.rm = TRUE),
-              LT5pct_mean = mean(domgl_LT5_percent, na.rm = TRUE),
-              LT5pct_min = min(domgl_LT5_percent, na.rm = TRUE),
-              LT5pct_max = max(domgl_LT5_percent, na.rm = TRUE),
-              LT5pct_p25 = quantile(domgl_LT5_percent, probs = 0.25, na.rm = TRUE),
-              LT5pct_p75 = quantile(domgl_LT5_percent, probs = 0.75, na.rm = TRUE))
-              
+# stn_moDist <- stn_mmyr |> 
+#     summarize(.by = c(station, month),
+#               mean.mgl_mean = mean(domgl_mean, na.rm = TRUE),
+#               mean.mgl_min = min(domgl_mean, na.rm = TRUE),
+#               mean.mgl_max = max(domgl_mean, na.rm = TRUE),
+#               mean.mgl_p25 = quantile(domgl_mean, probs = 0.25, na.rm = TRUE),
+#               mean.mgl_p75 = quantile(domgl_mean, probs = 0.75, na.rm = TRUE),
+#               median.mgl_median = median(domgl_median, na.rm = TRUE),
+#               median.mgl_min = min(domgl_median, na.rm = TRUE),
+#               median.mgl_max = max(domgl_median, na.rm = TRUE),
+#               median.mgl_p25 = quantile(domgl_median, probs = 0.25, na.rm = TRUE),
+#               median.mgl_p75 = quantile(domgl_median, probs = 0.75, na.rm = TRUE),
+#               LT2pct_mean = mean(domgl_LT2_percent, na.rm = TRUE),
+#               LT2pct_min = min(domgl_LT2_percent, na.rm = TRUE),
+#               LT2pct_max = max(domgl_LT2_percent, na.rm = TRUE),
+#               LT2pct_p25 = quantile(domgl_LT2_percent, probs = 0.25, na.rm = TRUE),
+#               LT2pct_p75 = quantile(domgl_LT2_percent, probs = 0.75, na.rm = TRUE),
+#               LT5pct_mean = mean(domgl_LT5_percent, na.rm = TRUE),
+#               LT5pct_min = min(domgl_LT5_percent, na.rm = TRUE),
+#               LT5pct_max = max(domgl_LT5_percent, na.rm = TRUE),
+#               LT5pct_p25 = quantile(domgl_LT5_percent, probs = 0.25, na.rm = TRUE),
+#               LT5pct_p75 = quantile(domgl_LT5_percent, probs = 0.75, na.rm = TRUE))
+#               
 
 # stn_yrNorms ----
 stn_yrLimits <- stn_yr |> 
     summarize(.by = station,
-        LT2pct_2sd = mean(annual_LT2_percent, na.rm = TRUE) + 2*sd(annual_LT2_percent, na.rm = TRUE),
-        LT5pct_2sd = mean(annual_LT5_percent, na.rm = TRUE) + 2*sd(annual_LT5_percent, na.rm = TRUE),
-        LT2pct_3sd = mean(annual_LT2_percent, na.rm = TRUE) + 3*sd(annual_LT2_percent, na.rm = TRUE),
-        LT5pct_3sd = mean(annual_LT5_percent, na.rm = TRUE) + 3*sd(annual_LT5_percent, na.rm = TRUE),
         LT2pct_boxOutlier = quantile(annual_LT2_percent, probs = 0.75, na.rm = TRUE) + 1.5*IQR(annual_LT2_percent, na.rm = TRUE),
         LT5pct_boxOutlier = quantile(annual_LT5_percent, probs = 0.75, na.rm = TRUE) + 1.5*IQR(annual_LT5_percent, na.rm = TRUE)
     )
@@ -128,28 +110,31 @@ stn_yr2 <- left_join(stn_yr, stn_yrLimits, by = "station") |>
 
 # overall_yrDist ----
 # need to be able to quantify how many stations are "worse than usual"
-yrDist <- stn_yr2 |> 
-    summarize(.by = year,
-              nStations = length(unique(station)),
-              nLT2_box_exceeding = sum(LT2_box_exceeded, na.rm = TRUE),
-              nLT5_box_exceeding = sum(LT5_box_exceeded, na.rm = TRUE),
-              LT2_median = median(annual_LT2_percent, na.rm = TRUE),
-              LT5_median = median(annual_LT5_percent, na.rm = TRUE),
-              LT2_p75 = quantile(annual_LT2_percent, probs = 0.75, na.rm = TRUE),
-              LT5_p75 = quantile(annual_LT5_percent, probs = 0.75, na.rm = TRUE),
-              LT2_iqr = IQR(annual_LT2_percent, na.rm = TRUE),
-              LT5_iqr = IQR(annual_LT5_percent, na.rm = TRUE)) |> 
-    mutate(pctLT2_box_exceeding = nLT2_box_exceeding / nStations * 100,
-           pctLT5_box_exceeding = nLT5_box_exceeding / nStations * 100)
-
-system_thresholds <- yrDist |> 
-    summarize(LT2_thresh = quantile(pctLT2_box_exceeding, probs = 0.75, na.rm = TRUE) + 1.5*IQR(pctLT2_box_exceeding, na.rm = TRUE),
-              LT5_thresh = quantile(pctLT5_box_exceeding, probs = 0.75, na.rm = TRUE) + 1.5*IQR(pctLT5_box_exceeding, na.rm = TRUE),
-              LT2_median = median(pctLT2_box_exceeding, na.rm = TRUE),
-              LT5_median = median(pctLT5_box_exceeding, na.rm = TRUE))
+# not using this metric after all
+# yrDist <- stn_yr2 |> 
+#     summarize(.by = year,
+#               nStations = length(unique(station)),
+#               nLT2_box_exceeding = sum(LT2_box_exceeded, na.rm = TRUE),
+#               nLT5_box_exceeding = sum(LT5_box_exceeded, na.rm = TRUE),
+#               LT2_median = median(annual_LT2_percent, na.rm = TRUE),
+#               LT5_median = median(annual_LT5_percent, na.rm = TRUE),
+#               LT2_p75 = quantile(annual_LT2_percent, probs = 0.75, na.rm = TRUE),
+#               LT5_p75 = quantile(annual_LT5_percent, probs = 0.75, na.rm = TRUE),
+#               LT2_iqr = IQR(annual_LT2_percent, na.rm = TRUE),
+#               LT5_iqr = IQR(annual_LT5_percent, na.rm = TRUE)) |> 
+#     mutate(pctLT2_box_exceeding = nLT2_box_exceeding / nStations * 100,
+#            pctLT5_box_exceeding = nLT5_box_exceeding / nStations * 100)
+# 
+# system_thresholds <- yrDist |> 
+#     summarize(LT2_thresh = quantile(pctLT2_box_exceeding, probs = 0.75, na.rm = TRUE) + 1.5*IQR(pctLT2_box_exceeding, na.rm = TRUE),
+#               LT5_thresh = quantile(pctLT5_box_exceeding, probs = 0.75, na.rm = TRUE) + 1.5*IQR(pctLT5_box_exceeding, na.rm = TRUE),
+#               LT2_median = median(pctLT2_box_exceeding, na.rm = TRUE),
+#               LT5_median = median(pctLT5_box_exceeding, na.rm = TRUE))
 
 tomap <- stn_yr2 |> 
     select(station, year, 
+           mean.mgl = annual_mean.mgl,
+           median.mgl = annual_median.mgl,
            LT2_pct = annual_LT2_percent,
            LT5_pct = annual_LT5_percent,
            LT2_unusual = LT2_box_exceeded,
@@ -212,10 +197,8 @@ for(i in seq_along(stns)){
 stn_trends <- bind_rows(trends)
 
 save(stn_mmyr,
-     stnDist,
-     stn_moDist,
+     stn_yr,
      stn_thresholds,
-     yrDist,
      stn_trends,
      tomap,
      file = here::here("data",
