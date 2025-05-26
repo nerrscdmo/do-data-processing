@@ -116,8 +116,11 @@ trends_do <- trends_df |>
                              param == "do_proportion_below5" ~ "LT5",
                              .default = "PROBLEM")) 
 
+stn_param_grid <- expand.grid(station = unique(tomap$station),
+                              param = unique(trends_do$param))
 
 stn_trends_long <- trends_do |> 
+    full_join(stn_param_grid, by = c("station", "param")) |> 
     full_join(distinct(select(tomap, station, lat, long)),
               by = "station")  |> 
     mutate(significant = case_when(pval <= 0.05 ~ "yes",
