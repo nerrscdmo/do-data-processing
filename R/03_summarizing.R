@@ -148,68 +148,39 @@ tomap <- stn_yr2 |>
     left_join(stn_coords, by = "station")
 
 # trends ----
-library(mgcv)
+# as of 5/26/25, adding in trends from SWMP Synthesis
+# rather than calculting myself (calculation code is retained for now; just commented out)
 
-trends <- list()
-stns <- unique(stn_mmyr$station)
-for(i in seq_along(stns)){
-    df <- filter(stn_mmyr, station == stns[i]) |> 
-        mutate(date = lubridate::decimal_date(lubridate::ymd(paste(year, month, "1"))))
-    
-    # if there's at least 5 years of data, calculate trends
-    if(max(df$date) - min(df$date) >= 5){
-        trnd_mgl <- lm(domgl_median ~ date,
-                        data = df)
-        mgl_summ <- summary(trnd_mgl)
-        
-        
-        trnd_LT2 <- lm(domgl_LT2_percent ~ date,
-                        data = df)
-        LT2_summ <- summary(trnd_LT2)
-        
-        
-        trnd_LT5 <- lm(domgl_LT5_percent ~ date,
-                        data = df)
-        LT5_summ <- summary(trnd_LT5)
-        
-        trnds <- data.frame(
-            station = stns[i],
-            domgl_median.trend = mgl_summ$coefficients["date", "Estimate"],
-            domgl_median.pval = mgl_summ$coefficients["date", "Pr(>|t|)"],
-            LT2.trend = LT2_summ$coefficients["date", "Estimate"],
-            LT2.pval = LT2_summ$coefficients["date", "Pr(>|t|)"],
-            LT5.trend = LT5_summ$coefficients["date", "Estimate"],
-            LT5.pval = LT5_summ$coefficients["date", "Pr(>|t|)"],
-            nYears = as.character(round(max(df$date) - min(df$date), 1)),
-            row.names = NULL
-        )
-        
-    } else {
-        trnds <- data.frame(station = stns[i],
-                            nYears = "<5")
-    }
-    
-    trends[[i]] <- trnds
-    
+load(here::here("data",
+                "trends from synthesis",
+                "long-term-trends.RData"))
 
-}
+trends_do <- trends_df |> 
+    select(station, 
+           param = parameter,
+           trend = Slope, 
+           pval = p.value,
+           nYears = ts_length) |> 
+    filter(param %in% c("do_mgl_median", "do_proportion_below2", "do_proportion_below5")) |> 
+    mutate(param = case_when(param == "do_mgl_median" ~ "domgl_median",
+                             param == "do_proportion_below2" ~ "LT2",
+                             param == "do_proportion_below5" ~ "LT5",
+                             .default = "PROBLEM")) 
+    # mutate(significant = case_when(pval <= 0.05 ~ "yes",
+    #                                is.na(pval) ~ "no",  # these are proportions when all values were 0
+    #                                pval > 0.05 ~ "no"),
+    #        direction = case_when(trend < 0 ~ "decreasing",
+    #                              trend > 0 ~ "increasing",
+    #                              trend == 0 ~ "none",
+    #                              is.na(trend) ~ "not calculated"),
+    #        map_color = case_when(is.na(trend) ~ "not calculated",
+    #                              significant == "no" ~ "no trend",
+    #                              direction == "increasing" ~ "increasing",
+    #                              direction == "decreasing" ~ "decreasing")) |> 
 
-stn_trends <- bind_rows(trends)
-
-# save(stn_mmyr,
-#      stn_yr,
-#      stn_thresholds,
-#      stn_trends,
-#      tomap,
-#      file = here::here("data",
-#                        "do_dataframes.RData")
-#      )
-
-
-stn_trends_long <- stn_trends |> 
-    pivot_longer(-c(station, nYears),
-                 names_to = c("param", ".value"),
-                 names_sep = "\\.") |> 
+stn_trends_long <- trends_do |> 
+    full_join(distinct(select(tomap, station, lat, long)),
+              by = "station")  |> 
     mutate(significant = case_when(pval <= 0.05 ~ "yes",
                                    is.na(pval) ~ "no",  # these are proportions when all values were 0
                                    pval > 0.05 ~ "no"),
@@ -221,8 +192,86 @@ stn_trends_long <- stn_trends |>
                                  significant == "no" ~ "no trend",
                                  direction == "increasing" ~ "increasing",
                                  direction == "decreasing" ~ "decreasing")) |> 
-    left_join(distinct(select(tomap, station, lat, long)),
-              by = "station")
+    arrange(station)
+
+# library(mgcv)
+# 
+# trends <- list()
+# stns <- unique(stn_mmyr$station)
+# for(i in seq_along(stns)){
+#     df <- filter(stn_mmyr, station == stns[i]) |> 
+#         mutate(date = lubridate::decimal_date(lubridate::ymd(paste(year, month, "1"))))
+#     
+#     # if there's at least 5 years of data, calculate trends
+#     if(max(df$date) - min(df$date) >= 5){
+#         trnd_mgl <- lm(domgl_median ~ date,
+#                         data = df)
+#         mgl_summ <- summary(trnd_mgl)
+#         
+#         
+#         trnd_LT2 <- lm(domgl_LT2_percent ~ date,
+#                         data = df)
+#         LT2_summ <- summary(trnd_LT2)
+#         
+#         
+#         trnd_LT5 <- lm(domgl_LT5_percent ~ date,
+#                         data = df)
+#         LT5_summ <- summary(trnd_LT5)
+#         
+#         trnds <- data.frame(
+#             station = stns[i],
+#             domgl_median.trend = mgl_summ$coefficients["date", "Estimate"],
+#             domgl_median.pval = mgl_summ$coefficients["date", "Pr(>|t|)"],
+#             LT2.trend = LT2_summ$coefficients["date", "Estimate"],
+#             LT2.pval = LT2_summ$coefficients["date", "Pr(>|t|)"],
+#             LT5.trend = LT5_summ$coefficients["date", "Estimate"],
+#             LT5.pval = LT5_summ$coefficients["date", "Pr(>|t|)"],
+#             nYears = as.character(round(max(df$date) - min(df$date), 1)),
+#             row.names = NULL
+#         )
+#         
+#     } else {
+#         trnds <- data.frame(station = stns[i],
+#                             nYears = "<5")
+#     }
+#     
+#     trends[[i]] <- trnds
+#     
+# 
+# }
+# 
+# stn_trends <- bind_rows(trends)
+# 
+# # save(stn_mmyr,
+# #      stn_yr,
+# #      stn_thresholds,
+# #      stn_trends,
+# #      tomap,
+# #      file = here::here("data",
+# #                        "do_dataframes.RData")
+# #      )
+# 
+# 
+# stn_trends_long <- stn_trends |> 
+#     pivot_longer(-c(station, nYears),
+#                  names_to = c("param", ".value"),
+#                  names_sep = "\\.") |> 
+#     mutate(significant = case_when(pval <= 0.05 ~ "yes",
+#                                    is.na(pval) ~ "no",  # these are proportions when all values were 0
+#                                    pval > 0.05 ~ "no"),
+#            direction = case_when(trend < 0 ~ "decreasing",
+#                                  trend > 0 ~ "increasing",
+#                                  trend == 0 ~ "none",
+#                                  is.na(trend) ~ "not calculated"),
+#            map_color = case_when(is.na(trend) ~ "not calculated",
+#                                  significant == "no" ~ "no trend",
+#                                  direction == "increasing" ~ "increasing",
+#                                  direction == "decreasing" ~ "decreasing")) |> 
+#     left_join(distinct(select(tomap, station, lat, long)),
+#               by = "station")
+
+
+# back to calcs ----
 
 hypoxia_annual <- tomap |> 
     select(station, year, threshold, pct) |> 
@@ -253,7 +302,17 @@ stn_trends2 <- stn_trends_long |>
            param = case_when(param == "domgl_median" ~ "DO (mg/L) median",
                              param == "LT2" ~ "% of year under 2 mg/L",
                              param == "LT5" ~ "% of year under 5 mg/L")) |> 
-    select(station, nYears, param, Trend = trend_description) 
+    select(station, param, Trend = trend_description) 
+
+stn_tsLength <- stn_mmyr |>
+    mutate(yearmonth = zoo::as.yearmon(paste(year, month, sep = "-"))) |> 
+    summarize(.by = c(station),
+              tsStart = min(yearmonth),
+              tsEnd = max(yearmonth)) |> 
+    mutate(nYears = round((tsEnd - tsStart)*2)/2,
+           nYears = paste0(as.character(nYears), " (",
+                           tsStart, " - ", tsEnd, ")")) |> 
+    select(station, nYears)
 
 stnMedians <- stn_yr |> 
     select(station,
@@ -275,10 +334,13 @@ stnMedians <- stn_yr |>
                              param == "LT5" ~ "% of year under 5 mg/L"))
 
 stn_summaries <- full_join(stnMedians, stn_trends2, by = c("station", "param")) |> 
+    full_join(stn_tsLength, by = "station") |> 
     relocate(nYears, .after = station) |> 
     rename("Time Series Length (years)" = nYears,
            "Long Term Median" = Median,
-           Variable = param)
+           Variable = param) |> 
+    mutate(Trend = case_when(is.na(Trend) ~ "Not calculated.",
+                             .default = Trend))
 
 
 save(stn_summaries,
