@@ -56,34 +56,6 @@ stnDist <- stn_yr |>
               LT5pct_median = median(annual_LT5_percent, na.rm = TRUE),
               )
 
-
-# stn_moDist ----
-# stats for each month, across all years
-# can use for station-wise pop-ups. "_mean" for geom_line; others for ribbons.
-# stn_moDist <- stn_mmyr |> 
-#     summarize(.by = c(station, month),
-#               mean.mgl_mean = mean(domgl_mean, na.rm = TRUE),
-#               mean.mgl_min = min(domgl_mean, na.rm = TRUE),
-#               mean.mgl_max = max(domgl_mean, na.rm = TRUE),
-#               mean.mgl_p25 = quantile(domgl_mean, probs = 0.25, na.rm = TRUE),
-#               mean.mgl_p75 = quantile(domgl_mean, probs = 0.75, na.rm = TRUE),
-#               median.mgl_median = median(domgl_median, na.rm = TRUE),
-#               median.mgl_min = min(domgl_median, na.rm = TRUE),
-#               median.mgl_max = max(domgl_median, na.rm = TRUE),
-#               median.mgl_p25 = quantile(domgl_median, probs = 0.25, na.rm = TRUE),
-#               median.mgl_p75 = quantile(domgl_median, probs = 0.75, na.rm = TRUE),
-#               LT2pct_mean = mean(domgl_LT2_percent, na.rm = TRUE),
-#               LT2pct_min = min(domgl_LT2_percent, na.rm = TRUE),
-#               LT2pct_max = max(domgl_LT2_percent, na.rm = TRUE),
-#               LT2pct_p25 = quantile(domgl_LT2_percent, probs = 0.25, na.rm = TRUE),
-#               LT2pct_p75 = quantile(domgl_LT2_percent, probs = 0.75, na.rm = TRUE),
-#               LT5pct_mean = mean(domgl_LT5_percent, na.rm = TRUE),
-#               LT5pct_min = min(domgl_LT5_percent, na.rm = TRUE),
-#               LT5pct_max = max(domgl_LT5_percent, na.rm = TRUE),
-#               LT5pct_p25 = quantile(domgl_LT5_percent, probs = 0.25, na.rm = TRUE),
-#               LT5pct_p75 = quantile(domgl_LT5_percent, probs = 0.75, na.rm = TRUE))
-#               
-
 # stn_yrNorms ----
 stn_yrLimits <- stn_yr |> 
     summarize(.by = station,
@@ -107,29 +79,6 @@ stn_yr2 <- left_join(stn_yr, stn_yrLimits, by = "station") |>
 # to graph all these things, go to script 99_plots-of-exceedances.R
 
 
-
-# overall_yrDist ----
-# need to be able to quantify how many stations are "worse than usual"
-# not using this metric after all
-# yrDist <- stn_yr2 |> 
-#     summarize(.by = year,
-#               nStations = length(unique(station)),
-#               nLT2_box_exceeding = sum(LT2_box_exceeded, na.rm = TRUE),
-#               nLT5_box_exceeding = sum(LT5_box_exceeded, na.rm = TRUE),
-#               LT2_median = median(annual_LT2_percent, na.rm = TRUE),
-#               LT5_median = median(annual_LT5_percent, na.rm = TRUE),
-#               LT2_p75 = quantile(annual_LT2_percent, probs = 0.75, na.rm = TRUE),
-#               LT5_p75 = quantile(annual_LT5_percent, probs = 0.75, na.rm = TRUE),
-#               LT2_iqr = IQR(annual_LT2_percent, na.rm = TRUE),
-#               LT5_iqr = IQR(annual_LT5_percent, na.rm = TRUE)) |> 
-#     mutate(pctLT2_box_exceeding = nLT2_box_exceeding / nStations * 100,
-#            pctLT5_box_exceeding = nLT5_box_exceeding / nStations * 100)
-# 
-# system_thresholds <- yrDist |> 
-#     summarize(LT2_thresh = quantile(pctLT2_box_exceeding, probs = 0.75, na.rm = TRUE) + 1.5*IQR(pctLT2_box_exceeding, na.rm = TRUE),
-#               LT5_thresh = quantile(pctLT5_box_exceeding, probs = 0.75, na.rm = TRUE) + 1.5*IQR(pctLT5_box_exceeding, na.rm = TRUE),
-#               LT2_median = median(pctLT2_box_exceeding, na.rm = TRUE),
-#               LT5_median = median(pctLT5_box_exceeding, na.rm = TRUE))
 
 tomap <- stn_yr2 |> 
     select(station, year, 
@@ -166,17 +115,7 @@ trends_do <- trends_df |>
                              param == "do_proportion_below2" ~ "LT2",
                              param == "do_proportion_below5" ~ "LT5",
                              .default = "PROBLEM")) 
-    # mutate(significant = case_when(pval <= 0.05 ~ "yes",
-    #                                is.na(pval) ~ "no",  # these are proportions when all values were 0
-    #                                pval > 0.05 ~ "no"),
-    #        direction = case_when(trend < 0 ~ "decreasing",
-    #                              trend > 0 ~ "increasing",
-    #                              trend == 0 ~ "none",
-    #                              is.na(trend) ~ "not calculated"),
-    #        map_color = case_when(is.na(trend) ~ "not calculated",
-    #                              significant == "no" ~ "no trend",
-    #                              direction == "increasing" ~ "increasing",
-    #                              direction == "decreasing" ~ "decreasing")) |> 
+
 
 stn_trends_long <- trends_do |> 
     full_join(distinct(select(tomap, station, lat, long)),
@@ -194,81 +133,6 @@ stn_trends_long <- trends_do |>
                                  direction == "decreasing" ~ "decreasing")) |> 
     arrange(station)
 
-# library(mgcv)
-# 
-# trends <- list()
-# stns <- unique(stn_mmyr$station)
-# for(i in seq_along(stns)){
-#     df <- filter(stn_mmyr, station == stns[i]) |> 
-#         mutate(date = lubridate::decimal_date(lubridate::ymd(paste(year, month, "1"))))
-#     
-#     # if there's at least 5 years of data, calculate trends
-#     if(max(df$date) - min(df$date) >= 5){
-#         trnd_mgl <- lm(domgl_median ~ date,
-#                         data = df)
-#         mgl_summ <- summary(trnd_mgl)
-#         
-#         
-#         trnd_LT2 <- lm(domgl_LT2_percent ~ date,
-#                         data = df)
-#         LT2_summ <- summary(trnd_LT2)
-#         
-#         
-#         trnd_LT5 <- lm(domgl_LT5_percent ~ date,
-#                         data = df)
-#         LT5_summ <- summary(trnd_LT5)
-#         
-#         trnds <- data.frame(
-#             station = stns[i],
-#             domgl_median.trend = mgl_summ$coefficients["date", "Estimate"],
-#             domgl_median.pval = mgl_summ$coefficients["date", "Pr(>|t|)"],
-#             LT2.trend = LT2_summ$coefficients["date", "Estimate"],
-#             LT2.pval = LT2_summ$coefficients["date", "Pr(>|t|)"],
-#             LT5.trend = LT5_summ$coefficients["date", "Estimate"],
-#             LT5.pval = LT5_summ$coefficients["date", "Pr(>|t|)"],
-#             nYears = as.character(round(max(df$date) - min(df$date), 1)),
-#             row.names = NULL
-#         )
-#         
-#     } else {
-#         trnds <- data.frame(station = stns[i],
-#                             nYears = "<5")
-#     }
-#     
-#     trends[[i]] <- trnds
-#     
-# 
-# }
-# 
-# stn_trends <- bind_rows(trends)
-# 
-# # save(stn_mmyr,
-# #      stn_yr,
-# #      stn_thresholds,
-# #      stn_trends,
-# #      tomap,
-# #      file = here::here("data",
-# #                        "do_dataframes.RData")
-# #      )
-# 
-# 
-# stn_trends_long <- stn_trends |> 
-#     pivot_longer(-c(station, nYears),
-#                  names_to = c("param", ".value"),
-#                  names_sep = "\\.") |> 
-#     mutate(significant = case_when(pval <= 0.05 ~ "yes",
-#                                    is.na(pval) ~ "no",  # these are proportions when all values were 0
-#                                    pval > 0.05 ~ "no"),
-#            direction = case_when(trend < 0 ~ "decreasing",
-#                                  trend > 0 ~ "increasing",
-#                                  trend == 0 ~ "none",
-#                                  is.na(trend) ~ "not calculated"),
-#            map_color = case_when(is.na(trend) ~ "not calculated",
-#                                  significant == "no" ~ "no trend",
-#                                  direction == "increasing" ~ "increasing",
-#                                  direction == "decreasing" ~ "decreasing")) |> 
-#     left_join(distinct(select(tomap, station, lat, long)),
-#               by = "station")
 
 
 # back to calcs ----
