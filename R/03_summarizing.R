@@ -10,6 +10,9 @@ stn_coords <- stn_mdat |>
            long = Longitude) |> 
     filter(stringr::str_ends(station, "wq")) |> 
     mutate(long = as.numeric(long) * -1)
+stn_names <- select(stn_mdat, 
+                    station = `Station Code`,
+                    StationName = `Station Name`)
 
 # CHANGE THIS - I'm manually removing 2024 because it's very anomalous and I think
 # we need to wait for authentication to catch flagged points.
@@ -202,6 +205,7 @@ stnMedians <- stn_yr |>
 
 stn_summaries <- full_join(stnMedians, stn_trends2, by = c("station", "param")) |> 
     full_join(stn_tsLength, by = "station") |> 
+    left_join(stn_names, by = "station") |> 
     relocate(nYears, .after = station) |> 
     rename("Time Series Length (years)" = nYears,
            "Long Term Median" = Median,
