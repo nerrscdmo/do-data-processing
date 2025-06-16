@@ -158,8 +158,8 @@ mgl_timeSeries <- stn_mmyr |>
 # table of summary stats by station
 stn_trends2 <- stn_trends_long |> 
     mutate(units = case_when(param == "domgl_median" ~ "mg/L per year",
-                             param == "LT2" ~ "% per year",
-                             param == "LT5" ~ "% per year"),
+                             param == "LT2" ~ "change in log-odds per year",
+                             param == "LT5" ~ "change in log-odds per year"),
            desc = case_when(significant == "yes" ~ stringr::str_to_sentence(direction),
                             .default = "No trend"),
            significant = case_when(significant == "no" ~ "not significant",
